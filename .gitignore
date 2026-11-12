@@ -1,0 +1,34 @@
+# ===========================
+# Backend (Java / Maven)
+# ===========================
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+backend/*.class
+backend/*.jar
+backend/*.war
+backend/.settings/
+backend/.classpath
+backend/.project
+backend/.idea/
+
+# ===========================
+# Frontend (Node / Vite)
+# ===========================
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+frontend/.env.production
+
+# ===========================
+# General
+# ===========================
+.env
+.env.local
+*.log
+.DS_Store
+Thumbs.db
+.idea/
+*.iml
+.vscode/
+
