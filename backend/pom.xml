@@ -15,7 +15,8 @@
     <description>API de gestión de reservas de canchas - CourtMaster Pro</description>
 
     <properties>
-        <java.version>25</java.version>
+        <java.version>21</java.version>
+        <maven.compiler.release>21</maven.compiler.release>
         <lombok.version>1.18.38</lombok.version>
         <jjwt.version>0.12.6</jjwt.version>
     </properties>
