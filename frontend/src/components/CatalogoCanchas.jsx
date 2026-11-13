@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axiosClient from '../api/axiosClient';
+import CalendarioReservas from './CalendarioReservas';
 
 export default function CatalogoCanchas({ onSelectCancha }) {
   const [canchas, setCanchas] = useState([]);
@@ -7,6 +8,7 @@ export default function CatalogoCanchas({ onSelectCancha }) {
   const [errorMsg, setErrorMsg] = useState('');
   const [filtroSuelo, setFiltroSuelo] = useState('TODOS');
   const [precioMax, setPrecioMax] = useState('');
+  const [canchaModal, setCanchaModal] = useState(null);
 
   useEffect(() => {
     const fetchCanchasActivas = async () => {
@@ -172,7 +174,7 @@ export default function CatalogoCanchas({ onSelectCancha }) {
                     if (onSelectCancha) {
                       onSelectCancha(cancha);
                     } else {
-                      alert(`Has seleccionado ${cancha.nombre} para reservar.`);
+                      setCanchaModal(cancha);
                     }
                   }}
                   className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-semibold rounded-xl shadow-sm transition-all text-sm flex items-center justify-center gap-2"
@@ -185,6 +187,21 @@ export default function CatalogoCanchas({ onSelectCancha }) {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Modal de Grilla de Disponibilidad y Reserva */}
+      {canchaModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 overflow-y-auto">
+          <div className="w-full max-w-4xl my-8">
+            <CalendarioReservas
+              cancha={canchaModal}
+              onClose={() => setCanchaModal(null)}
+              onReservaCompletada={() => {
+                // Opcional: acciones adicionales
+              }}
+            />
+          </div>
         </div>
       )}
     </div>
