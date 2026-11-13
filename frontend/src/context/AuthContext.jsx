@@ -43,9 +43,12 @@ export const AuthProvider = ({ children }) => {
 
       return { success: true, user: userData };
     } catch (error) {
-      const message =
-        error.response?.data?.message ||
-        'Error al iniciar sesión. Revisa tus credenciales.';
+      let message = 'Error al iniciar sesión. Revisa tus credenciales.';
+      if (!error.response) {
+        message = 'No se pudo conectar con el backend en http://localhost:8080. ¿El backend está encendido?';
+      } else if (error.response.data?.message) {
+        message = error.response.data.message;
+      }
       return { success: false, error: message };
     }
   };
