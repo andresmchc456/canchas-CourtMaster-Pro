@@ -40,3 +40,6 @@ npm run dev
 - Backend API: http://localhost:8080
 - PostgreSQL: localhost:5433
 
+## 📐 Arquitectura y Control de Concurrencia
+Para consultar el diagrama de secuencia oficial y el detalle de cómo el sistema previene condiciones de carrera con bloqueos pesimistas (`SELECT FOR UPDATE`), consulta [arquitectura_reservas.md](file:///C:/Users/USUARIO/Desktop/proyectos/Canchas/arquitectura_reservas.md).
+
