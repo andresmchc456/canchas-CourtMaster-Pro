@@ -52,5 +52,21 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
      * Retorna el historial de reservas de un usuario específico.
      */
     List<Reserva> findByUsuarioIdOrderByFechaDescHoraInicioDesc(Long usuarioId);
+
+    /**
+     * Consulta agregada (HU05): Agrupa por cancha y calcula el total de reservas e ingresos acumulados
+     * en un rango de fechas considerando únicamente reservas en estado ACTIVA.
+     */
+    @Query("SELECT new com.courtmaster.canchas.dto.ReporteIngresosDTO(" +
+           "r.cancha.id, r.cancha.nombre, COUNT(r.id), SUM(r.precioHistorico)) " +
+           "FROM Reserva r " +
+           "WHERE r.estado = :estado AND r.fecha >= :fechaInicio AND r.fecha <= :fechaFin " +
+           "GROUP BY r.cancha.id, r.cancha.nombre " +
+           "ORDER BY SUM(r.precioHistorico) DESC")
+    List<com.courtmaster.canchas.dto.ReporteIngresosDTO> obtenerReporteIngresosPorCancha(
+            @Param("fechaInicio") LocalDate fechaInicio,
+            @Param("fechaFin") LocalDate fechaFin,
+            @Param("estado") EstadoReserva estado
+    );
 }
 
