@@ -33,7 +33,10 @@ const Login = () => {
     const result = await login(formData.email, formData.password);
 
     if (result.success) {
-      navigate(from, { replace: true });
+      // Si es ADMIN y no viene de una ruta previa forzada, redirigir directo a /admin
+      const destinoPorDefecto = result.user?.rol === 'ROLE_ADMIN' ? '/admin' : '/';
+      const destino = location.state?.from?.pathname || destinoPorDefecto;
+      navigate(destino, { replace: true });
     } else {
       setError(result.error);
       setIsSubmitting(false);

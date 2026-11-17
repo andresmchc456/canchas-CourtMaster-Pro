@@ -8,6 +8,7 @@ import Register from './pages/Register';
 import Unauthorized from './pages/Unauthorized';
 import CanchaAdminTable from './components/CanchaAdminTable';
 import CatalogoCanchas from './components/CatalogoCanchas';
+import ReportesAdmin from './components/ReportesAdmin';
 
 // Catálogo Público (accesible sin iniciar sesión)
 const CatalogoPublico = () => {
@@ -86,6 +87,14 @@ const DashboardUsuario = () => {
             <span className="text-sm text-slate-600 hidden sm:inline">
               Hola, <strong className="text-slate-800">{user?.nombre}</strong>
             </span>
+            {user?.rol === 'ROLE_ADMIN' && (
+              <Link
+                to="/admin"
+                className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold transition shadow-sm flex items-center gap-1.5"
+              >
+                ⚙️ Panel Administrador
+              </Link>
+            )}
             <button
               onClick={logout}
               className="px-3.5 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-xl text-xs font-semibold transition"
@@ -110,6 +119,8 @@ const DashboardUsuario = () => {
 // Panel de Administrador
 const DashboardAdmin = () => {
   const { user, logout } = useAuth();
+  const [tabActiva, setTabActiva] = React.useState('canchas'); // 'canchas' | 'reportes'
+
   return (
     <div className="min-h-screen bg-slate-100">
       <header className="bg-slate-900 border-b border-slate-800 text-white">
@@ -141,13 +152,46 @@ const DashboardAdmin = () => {
             </button>
           </div>
         </div>
+
+        {/* Pestañas de Navegación del Panel Admin */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex gap-2 pt-2">
+          <button
+            onClick={() => setTabActiva('canchas')}
+            className={`px-4 py-2 font-semibold text-sm border-b-2 transition-all ${
+              tabActiva === 'canchas'
+                ? 'border-emerald-400 text-emerald-400'
+                : 'border-transparent text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            🏟️ Inventario de Canchas
+          </button>
+          <button
+            onClick={() => setTabActiva('reportes')}
+            className={`px-4 py-2 font-semibold text-sm border-b-2 transition-all ${
+              tabActiva === 'reportes'
+                ? 'border-emerald-400 text-emerald-400'
+                : 'border-transparent text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            📊 Reportes de Utilización
+          </button>
+        </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <CanchaAdminTable />
+        {tabActiva === 'canchas' ? <CanchaAdminTable /> : <ReportesAdmin />}
       </main>
     </div>
   );
+};
+
+// Redirecciona al panel correspondiente según el rol del usuario autenticado
+const HomeDispatcher = () => {
+  const { user } = useAuth();
+  if (user?.rol === 'ROLE_ADMIN') {
+    return <Navigate to="/admin" replace />;
+  }
+  return <DashboardUsuario />;
 };
 
 function App() {
@@ -163,7 +207,7 @@ function App() {
 
           {/* Rutas Protegidas para usuarios autenticados */}
           <Route element={<ProtectedRoute />}>
-            <Route path="/" element={<DashboardUsuario />} />
+            <Route path="/" element={<HomeDispatcher />} />
           </Route>
 
           {/* Rutas Protegidas exclusivas para ROLE_ADMIN */}
