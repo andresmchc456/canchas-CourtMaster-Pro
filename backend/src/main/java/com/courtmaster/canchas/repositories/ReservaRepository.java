@@ -54,6 +54,13 @@ public interface ReservaRepository extends JpaRepository<Reserva, Long> {
     List<Reserva> findByUsuarioIdOrderByFechaDescHoraInicioDesc(Long usuarioId);
 
     /**
+     * Retorna todas las reservas del sistema con usuario y cancha cargados,
+     * ordenadas por fecha y hora de inicio descendente para el panel administrativo.
+     */
+    @Query("SELECT r FROM Reserva r JOIN FETCH r.usuario JOIN FETCH r.cancha ORDER BY r.fecha DESC, r.horaInicio DESC")
+    List<Reserva> findAllWithDetailsOrderByFechaDescHoraInicioDesc();
+
+    /**
      * Consulta agregada (HU05): Agrupa por cancha y calcula el total de reservas e ingresos acumulados
      * en un rango de fechas considerando únicamente reservas en estado ACTIVA.
      */

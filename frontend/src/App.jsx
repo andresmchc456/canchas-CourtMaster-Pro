@@ -9,6 +9,7 @@ import Unauthorized from './pages/Unauthorized';
 import CanchaAdminTable from './components/CanchaAdminTable';
 import CatalogoCanchas from './components/CatalogoCanchas';
 import ReportesAdmin from './components/ReportesAdmin';
+import AdminReservas from './components/AdminReservas';
 import MisReservas from './components/MisReservas';
 
 // Catálogo Público (accesible sin iniciar sesión)
@@ -157,7 +158,7 @@ const DashboardUsuario = () => {
 // Panel de Administrador
 const DashboardAdmin = () => {
   const { user, logout } = useAuth();
-  const [tabActiva, setTabActiva] = React.useState('canchas'); // 'canchas' | 'reportes'
+  const [tabActiva, setTabActiva] = React.useState('canchas'); // 'canchas' | 'reservas' | 'reportes'
 
   return (
     <div className="min-h-screen bg-slate-100">
@@ -204,6 +205,16 @@ const DashboardAdmin = () => {
             🏟️ Inventario de Canchas
           </button>
           <button
+            onClick={() => setTabActiva('reservas')}
+            className={`px-4 py-2 font-semibold text-sm border-b-2 transition-all ${
+              tabActiva === 'reservas'
+                ? 'border-emerald-400 text-emerald-400'
+                : 'border-transparent text-slate-400 hover:text-slate-200'
+            }`}
+          >
+            📅 Gestión de Reservas
+          </button>
+          <button
             onClick={() => setTabActiva('reportes')}
             className={`px-4 py-2 font-semibold text-sm border-b-2 transition-all ${
               tabActiva === 'reportes'
@@ -217,7 +228,9 @@ const DashboardAdmin = () => {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {tabActiva === 'canchas' ? <CanchaAdminTable /> : <ReportesAdmin />}
+        {tabActiva === 'canchas' && <CanchaAdminTable />}
+        {tabActiva === 'reservas' && <AdminReservas />}
+        {tabActiva === 'reportes' && <ReportesAdmin />}
       </main>
     </div>
   );

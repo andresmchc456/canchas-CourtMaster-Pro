@@ -1,5 +1,7 @@
 package com.courtmaster.canchas.services;
 
+import com.courtmaster.canchas.dto.AdminReprogramarReservaDTO;
+import com.courtmaster.canchas.dto.AdminReservaResponseDTO;
 import com.courtmaster.canchas.dto.DisponibilidadDTO;
 import com.courtmaster.canchas.dto.ModificarReservaRequestDTO;
 import com.courtmaster.canchas.dto.ReservaRequestDTO;
@@ -215,6 +217,88 @@ public class ReservaService {
                 .stream()
                 .map(ReservaResponseDTO::fromEntity)
                 .toList();
+    }
+
+    /**
+     * Lista todas las reservas para el panel administrativo con filtros opcionales.
+     */
+    @Transactional(readOnly = true)
+    public List<AdminReservaResponseDTO> listarReservasAdmin(LocalDate fecha, Long canchaId, EstadoReserva estado) {
+        return reservaRepository.findAllWithDetailsOrderByFechaDescHoraInicioDesc()
+                .stream()
+                .filter(r -> fecha == null || r.getFecha().equals(fecha))
+                .filter(r -> canchaId == null || r.getCancha().getId().equals(canchaId))
+                .filter(r -> estado == null || r.getEstado() == estado)
+                .map(AdminReservaResponseDTO::fromEntity)
+                .toList();
+    }
+
+    /**
+     * Reprograma una reserva ACTIVA desde el panel administrativo con bloqueo pesimista (PESSIMISTIC_WRITE).
+     */
+    @Transactional
+    public AdminReservaResponseDTO reprogramarReservaAdmin(Long id, AdminReprogramarReservaDTO dto) {
+        Reserva reserva = reservaRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Reserva no encontrada con ID: " + id));
+
+        if (reserva.getEstado() != EstadoReserva.ACTIVA) {
+            throw new IllegalArgumentException("Solo se pueden reprogramar reservas en estado ACTIVA.");
+        }
+
+        LocalTime nuevaHoraInicio = dto.horaInicio();
+        if (nuevaHoraInicio.isBefore(HORA_APERTURA) || !nuevaHoraInicio.isBefore(HORA_CIERRE) || nuevaHoraInicio.getMinute() != 0) {
+            throw new IllegalArgumentException("La hora de inicio debe corresponder a un bloque válido entre 08:00 y 21:00.");
+        }
+
+        Long targetCanchaId = dto.canchaId() != null ? dto.canchaId() : reserva.getCancha().getId();
+        Cancha canchaDestino = canchaRepository.findByIdWithLock(targetCanchaId)
+                .orElseThrow(() -> new EntityNotFoundException("Cancha no encontrada con ID: " + targetCanchaId));
+
+        if (!canchaDestino.getActiva()) {
+            throw new IllegalArgumentException("No se puede reprogramar a una cancha inactiva.");
+        }
+
+        Optional<Reserva> conflicto = reservaRepository.findReservaActivaConBloqueoExcluyendoId(
+                canchaDestino.getId(),
+                dto.fecha(),
+                nuevaHoraInicio,
+                EstadoReserva.ACTIVA,
+                id
+        );
+
+        if (conflicto.isPresent()) {
+            throw new HorarioOcupadoException("El nuevo horario seleccionado ya se encuentra ocupado");
+        }
+
+        reserva.setCancha(canchaDestino);
+        reserva.setFecha(dto.fecha());
+        reserva.setHoraInicio(nuevaHoraInicio);
+        reserva.setHoraFin(nuevaHoraInicio.plusHours(1));
+
+        Reserva actualizada = reservaRepository.save(reserva);
+        log.info("Admin reprogramó reserva #{} a cancha {} en fecha {} {}",
+                id, canchaDestino.getId(), dto.fecha(), nuevaHoraInicio);
+
+        return AdminReservaResponseDTO.fromEntity(actualizada);
+    }
+
+    /**
+     * Cancela lógicamente una reserva desde el panel administrativo, liberando el bloque horario.
+     */
+    @Transactional
+    public AdminReservaResponseDTO cancelarReservaAdmin(Long id) {
+        Reserva reserva = reservaRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Reserva no encontrada con ID: " + id));
+
+        if (reserva.getEstado() == EstadoReserva.CANCELADA) {
+            throw new IllegalArgumentException("La reserva ya se encuentra cancelada.");
+        }
+
+        reserva.setEstado(EstadoReserva.CANCELADA);
+        Reserva cancelada = reservaRepository.save(reserva);
+        log.info("Admin canceló reserva #{}. Horario liberado.", id);
+
+        return AdminReservaResponseDTO.fromEntity(cancelada);
     }
 
     private Usuario resolverUsuario(Long usuarioIdDto, String userEmailAuth) {
