@@ -9,6 +9,7 @@ import Unauthorized from './pages/Unauthorized';
 import CanchaAdminTable from './components/CanchaAdminTable';
 import CatalogoCanchas from './components/CatalogoCanchas';
 import ReportesAdmin from './components/ReportesAdmin';
+import MisReservas from './components/MisReservas';
 
 // Catálogo Público (accesible sin iniciar sesión)
 const CatalogoPublico = () => {
@@ -27,7 +28,7 @@ const CatalogoPublico = () => {
           <div className="flex items-center gap-3">
             {user ? (
               <Link
-                to={user.rol === 'ROLE_ADMIN' ? '/admin' : '/'}
+                to={user.rol === 'ROLE_ADMIN' ? '/admin' : '/dashboard'}
                 className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold transition shadow-sm"
               >
                 Ir a mi Panel
@@ -67,30 +68,35 @@ const CatalogoPublico = () => {
   );
 };
 
-// Panel de Usuario Regular
+// Panel de Usuario Regular / Jugador (ROLE_USER)
 const DashboardUsuario = () => {
   const { user, logout } = useAuth();
+  const [tabActiva, setTabActiva] = React.useState('canchas'); // 'canchas' | 'reservas'
+
   return (
     <div className="min-h-screen bg-slate-50">
-      <header className="bg-white border-b border-slate-200">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-emerald-600 rounded-xl flex items-center justify-center text-white font-black text-lg">
+            <div className="w-9 h-9 bg-emerald-600 rounded-xl flex items-center justify-center text-white font-black text-lg shadow-sm">
               C
             </div>
             <div>
               <span className="font-bold text-lg text-slate-800 leading-none block">CourtMaster Pro</span>
-              <span className="text-xs text-slate-500">Panel de Jugador</span>
+              <span className="text-xs text-emerald-600 font-semibold">Panel de Jugador</span>
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-slate-600 hidden sm:inline">
-              Hola, <strong className="text-slate-800">{user?.nombre}</strong>
-            </span>
+            <div className="hidden sm:flex items-center gap-2 text-sm text-slate-600">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+              <span>
+                Jugador: <strong className="text-slate-800">{user?.nombre}</strong>
+              </span>
+            </div>
             {user?.rol === 'ROLE_ADMIN' && (
               <Link
                 to="/admin"
-                className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold transition shadow-sm flex items-center gap-1.5"
+                className="px-3.5 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-semibold transition shadow-sm flex items-center gap-1.5"
               >
                 ⚙️ Panel Administrador
               </Link>
@@ -103,14 +109,46 @@ const DashboardUsuario = () => {
             </button>
           </div>
         </div>
+
+        {/* Pestañas de Navegación del Jugador */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex gap-2 pt-2 border-t border-slate-100 bg-white">
+          <button
+            onClick={() => setTabActiva('canchas')}
+            className={`px-4 py-2 font-semibold text-sm border-b-2 transition-all flex items-center gap-2 ${
+              tabActiva === 'canchas'
+                ? 'border-emerald-600 text-emerald-700 bg-emerald-50/50 rounded-t-lg'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            🏟️ <span>Canchas Disponibles</span>
+          </button>
+          <button
+            onClick={() => setTabActiva('reservas')}
+            className={`px-4 py-2 font-semibold text-sm border-b-2 transition-all flex items-center gap-2 ${
+              tabActiva === 'reservas'
+                ? 'border-emerald-600 text-emerald-700 bg-emerald-50/50 rounded-t-lg'
+                : 'border-transparent text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            📅 <span>Mis Reservas y Perfil</span>
+          </button>
+        </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900">Reservar Canchas</h2>
-          <p className="text-sm text-slate-500">Selecciona una cancha deportiva activa para ver horarios disponibles</p>
-        </div>
-        <CatalogoCanchas />
+        {tabActiva === 'canchas' ? (
+          <>
+            <div>
+              <h2 className="text-2xl font-bold text-slate-900">Reservar Canchas Deportivas</h2>
+              <p className="text-sm text-slate-500">
+                Selecciona una instalación, consulta la disponibilidad de horarios en tiempo real y confirma tu turno
+              </p>
+            </div>
+            <CatalogoCanchas onReservaExitosa={() => setTabActiva('reservas')} />
+          </>
+        ) : (
+          <MisReservas onReservarNuevo={() => setTabActiva('canchas')} />
+        )}
       </main>
     </div>
   );
@@ -139,10 +177,10 @@ const DashboardAdmin = () => {
               Admin: <strong className="text-slate-200">{user?.email}</strong>
             </span>
             <Link
-              to="/canchas"
+              to="/dashboard"
               className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold transition"
             >
-              Ver Catálogo Público
+              Vista de Jugador
             </Link>
             <button
               onClick={logout}
@@ -191,7 +229,7 @@ const HomeDispatcher = () => {
   if (user?.rol === 'ROLE_ADMIN') {
     return <Navigate to="/admin" replace />;
   }
-  return <DashboardUsuario />;
+  return <Navigate to="/dashboard" replace />;
 };
 
 function App() {
@@ -208,6 +246,7 @@ function App() {
           {/* Rutas Protegidas para usuarios autenticados */}
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<HomeDispatcher />} />
+            <Route path="/dashboard" element={<DashboardUsuario />} />
           </Route>
 
           {/* Rutas Protegidas exclusivas para ROLE_ADMIN */}

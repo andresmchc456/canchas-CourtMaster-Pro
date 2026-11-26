@@ -2,12 +2,13 @@ import React, { useState, useEffect, useMemo } from 'react';
 import axiosClient from '../api/axiosClient';
 import CalendarioReservas from './CalendarioReservas';
 
-export default function CatalogoCanchas({ onSelectCancha }) {
+export default function CatalogoCanchas({ onSelectCancha, onReservaExitosa }) {
   const [canchas, setCanchas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
   const [filtroSuelo, setFiltroSuelo] = useState('TODOS');
   const [precioMax, setPrecioMax] = useState('');
+  const [busquedaNombre, setBusquedaNombre] = useState('');
   const [canchaModal, setCanchaModal] = useState(null);
 
   useEffect(() => {
@@ -27,6 +28,13 @@ export default function CatalogoCanchas({ onSelectCancha }) {
     fetchCanchasActivas();
   }, []);
 
+  // Obtener superficies únicas dinámicamente
+  const superficiesDisponibles = useMemo(() => {
+    const defaultSuelos = ['Césped Sintético', 'Parquet', 'Arcilla', 'Cemento'];
+    const suelosDeCanchas = canchas.map((c) => c.tipoSuelo).filter(Boolean);
+    return Array.from(new Set([...defaultSuelos, ...suelosDeCanchas]));
+  }, [canchas]);
+
   // Filtrado local reactivo en memoria
   const canchasFiltradas = useMemo(() => {
     return canchas.filter((cancha) => {
@@ -38,9 +46,13 @@ export default function CatalogoCanchas({ onSelectCancha }) {
         precioMax === '' ||
         Number(cancha.tarifaBase) <= Number(precioMax);
 
-      return matchSuelo && matchPrecio;
+      const matchNombre =
+        !busquedaNombre.trim() ||
+        cancha.nombre.toLowerCase().includes(busquedaNombre.trim().toLowerCase());
+
+      return matchSuelo && matchPrecio && matchNombre;
     });
-  }, [canchas, filtroSuelo, precioMax]);
+  }, [canchas, filtroSuelo, precioMax, busquedaNombre]);
 
   return (
     <div className="space-y-8">
@@ -48,6 +60,26 @@ export default function CatalogoCanchas({ onSelectCancha }) {
       <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex flex-wrap items-center gap-4">
+            {/* Filtro: Búsqueda por Nombre */}
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                Buscar Cancha
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Ej: Básquet, Pádel..."
+                  value={busquedaNombre}
+                  onChange={(e) => setBusquedaNombre(e.target.value)}
+                  className="border border-slate-300 rounded-xl pl-9 pr-3.5 py-2 text-sm w-48 sm:w-56 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition"
+                />
+                <svg className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+            </div>
+
+            {/* Filtro: Superficie */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
                 Superficie
@@ -58,13 +90,15 @@ export default function CatalogoCanchas({ onSelectCancha }) {
                 className="border border-slate-300 rounded-xl px-3.5 py-2 text-sm bg-slate-50 focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none transition"
               >
                 <option value="TODOS">Todas las superficies</option>
-                <option value="Césped Sintético">Césped Sintético</option>
-                <option value="Parquet">Parquet</option>
-                <option value="Arcilla">Arcilla</option>
-                <option value="Cemento">Cemento</option>
+                {superficiesDisponibles.map((suelo) => (
+                  <option key={suelo} value={suelo}>
+                    {suelo}
+                  </option>
+                ))}
               </select>
             </div>
 
+            {/* Filtro: Tarifa Máxima */}
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
                 Precio Máximo / Hora ($)
@@ -79,11 +113,12 @@ export default function CatalogoCanchas({ onSelectCancha }) {
               />
             </div>
 
-            {(filtroSuelo !== 'TODOS' || precioMax !== '') && (
+            {(filtroSuelo !== 'TODOS' || precioMax !== '' || busquedaNombre !== '') && (
               <button
                 onClick={() => {
                   setFiltroSuelo('TODOS');
                   setPrecioMax('');
+                  setBusquedaNombre('');
                 }}
                 className="self-end mb-1 text-xs font-semibold text-emerald-700 hover:text-emerald-900 underline"
               >
@@ -179,7 +214,7 @@ export default function CatalogoCanchas({ onSelectCancha }) {
                   }}
                   className="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 active:scale-[0.99] text-white font-semibold rounded-xl shadow-sm transition-all text-sm flex items-center justify-center gap-2"
                 >
-                  <span>Reservar Horario</span>
+                  <span>Ver Disponibilidad / Reservar</span>
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
                   </svg>
@@ -197,8 +232,10 @@ export default function CatalogoCanchas({ onSelectCancha }) {
             <CalendarioReservas
               cancha={canchaModal}
               onClose={() => setCanchaModal(null)}
-              onReservaCompletada={() => {
-                // Opcional: acciones adicionales
+              onReservaCompletada={(nuevaReserva) => {
+                if (onReservaExitosa) {
+                  onReservaExitosa(nuevaReserva);
+                }
               }}
             />
           </div>

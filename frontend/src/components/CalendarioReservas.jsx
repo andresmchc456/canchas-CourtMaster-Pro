@@ -93,6 +93,8 @@ export default function CalendarioReservas({ cancha, onClose, onReservaCompletad
         setBloqueAConfirmar(null);
         // Re-disparar inmediatamente el GET para actualizar la grilla
         cargarDisponibilidad();
+      } else if (err.response?.status === 401 || err.response?.status === 403) {
+        alert(err.response?.data?.message || 'Tu sesión ha expirado o no estás autenticado. Por favor vuelve a iniciar sesión.');
       } else {
         alert(err.response?.data?.message || 'Error inesperado al crear la reserva.');
       }

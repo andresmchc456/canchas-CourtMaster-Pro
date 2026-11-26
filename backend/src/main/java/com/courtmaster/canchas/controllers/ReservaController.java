@@ -49,10 +49,21 @@ public class ReservaController {
 
     /**
      * Paso 3: Endpoint para cancelar una reserva (libera el bloque horario).
-     * PUT /api/reservas/{id}/cancelar
+     * Soporta PUT, PATCH en /api/reservas/{id}/cancelar y DELETE en /api/reservas/{id}
      */
-    @PutMapping("/api/reservas/{id}/cancelar")
+    @RequestMapping(value = "/api/reservas/{id}/cancelar", method = {RequestMethod.PUT, RequestMethod.PATCH})
     public ResponseEntity<ReservaResponseDTO> cancelarReserva(
+            @PathVariable Long id,
+            Authentication authentication) {
+        String email = authentication != null ? authentication.getName() : null;
+        boolean esAdmin = authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+        return ResponseEntity.ok(reservaService.cancelarReserva(id, email, esAdmin));
+    }
+
+    @DeleteMapping("/api/reservas/{id}")
+    public ResponseEntity<ReservaResponseDTO> cancelarReservaPorDelete(
             @PathVariable Long id,
             Authentication authentication) {
         String email = authentication != null ? authentication.getName() : null;

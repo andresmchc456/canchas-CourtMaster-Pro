@@ -32,8 +32,16 @@ npm run dev
 ```
 
 ## 🔐 Credenciales por defecto
-- **Email:** admin@courtmaster.com
-- **Contraseña:** admin123
+
+### Administrador (ROLE_ADMIN):
+- **Email:** `admin@courtmaster.com`
+- **Contraseña:** `admin123`
+
+### Usuario / Jugador (ROLE_USER):
+- **Email:** `user@courtmaster.com`
+- **Contraseña:** `user123`
+
+*(También puedes crear un nuevo perfil de jugador registrándote gratis en `/register`)*
 
 ## 🗺️ URLs
 - Frontend: http://localhost:5173

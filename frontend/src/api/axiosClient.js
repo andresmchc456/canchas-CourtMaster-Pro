@@ -25,7 +25,7 @@ axiosClient.interceptors.request.use(
 axiosClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
+    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
       // Si la sesión expiró o es inválida, limpiamos storage y redireccionamos al login
       localStorage.removeItem('courtmaster_token');
       localStorage.removeItem('courtmaster_user');

@@ -22,7 +22,6 @@ import java.time.LocalTime;
 import java.util.List;
 
 @Configuration
-@Profile("local")
 @RequiredArgsConstructor
 @Slf4j
 public class DataInitializer implements CommandLineRunner {
@@ -35,7 +34,7 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) {
-        log.info("Inicializando datos por defecto en perfil local (H2)...");
+        log.info("Inicializando/verificando datos por defecto...");
 
         Rol rolAdmin = rolRepository.findByNombre("ROLE_ADMIN")
                 .orElseGet(() -> rolRepository.save(Rol.builder().nombre("ROLE_ADMIN").build()));
@@ -43,8 +42,9 @@ public class DataInitializer implements CommandLineRunner {
         Rol rolUser = rolRepository.findByNombre("ROLE_USER")
                 .orElseGet(() -> rolRepository.save(Rol.builder().nombre("ROLE_USER").build()));
 
-        if (!usuarioRepository.existsByEmail("admin@courtmaster.com")) {
-            Usuario admin = Usuario.builder()
+        Usuario admin = usuarioRepository.findByEmail("admin@courtmaster.com").orElse(null);
+        if (admin == null) {
+            admin = Usuario.builder()
                     .nombre("Administrador CourtMaster")
                     .email("admin@courtmaster.com")
                     .passwordHash(passwordEncoder.encode("admin123"))
@@ -54,10 +54,16 @@ public class DataInitializer implements CommandLineRunner {
                     .build();
             usuarioRepository.save(admin);
             log.info("Usuario administrador creado: admin@courtmaster.com / admin123");
+        } else {
+            admin.setPasswordHash(passwordEncoder.encode("admin123"));
+            admin.setActiva(true);
+            usuarioRepository.save(admin);
+            log.info("Contraseña de administrador actualizada correctamente a: admin123");
         }
 
         Usuario jugador = null;
-        if (!usuarioRepository.existsByEmail("user@courtmaster.com")) {
+        Usuario userExistente = usuarioRepository.findByEmail("user@courtmaster.com").orElse(null);
+        if (userExistente == null) {
             Usuario user = Usuario.builder()
                     .nombre("Usuario Jugador")
                     .email("user@courtmaster.com")
@@ -69,7 +75,10 @@ public class DataInitializer implements CommandLineRunner {
             jugador = usuarioRepository.save(user);
             log.info("Usuario cliente creado: user@courtmaster.com / user123");
         } else {
-            jugador = usuarioRepository.findByEmail("user@courtmaster.com").orElse(null);
+            userExistente.setPasswordHash(passwordEncoder.encode("user123"));
+            userExistente.setActiva(true);
+            jugador = usuarioRepository.save(userExistente);
+            log.info("Contraseña de usuario cliente actualizada a: user123");
         }
 
         if (canchaRepository.count() == 0) {

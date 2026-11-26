@@ -1,7 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const Unauthorized = () => {
+  const { user } = useAuth();
+  const destinoInicio = user?.rol === 'ROLE_ADMIN' ? '/admin' : '/dashboard';
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-slate-50 px-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-xl border border-slate-100 p-8 text-center">
@@ -17,10 +21,10 @@ const Unauthorized = () => {
         </p>
         <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-center">
           <Link
-            to="/"
+            to={destinoInicio}
             className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-xl transition-colors shadow-sm"
           >
-            Ir al Inicio
+            Ir a mi Panel
           </Link>
           <Link
             to="/login"

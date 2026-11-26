@@ -33,9 +33,20 @@ const Login = () => {
     const result = await login(formData.email, formData.password);
 
     if (result.success) {
-      // Si es ADMIN y no viene de una ruta previa forzada, redirigir directo a /admin
-      const destinoPorDefecto = result.user?.rol === 'ROLE_ADMIN' ? '/admin' : '/';
-      const destino = location.state?.from?.pathname || destinoPorDefecto;
+      // Redirección estricta por rol (HU02):
+      const esAdmin = result.user?.rol === 'ROLE_ADMIN';
+      const fromPath = location.state?.from?.pathname;
+
+      let destino = esAdmin ? '/admin' : '/dashboard';
+      if (fromPath && fromPath !== '/login' && fromPath !== '/unauthorized') {
+        // Si la ruta previa era administrativa (/admin), un usuario normal nunca debe ser enviado allí
+        if (fromPath.startsWith('/admin')) {
+          destino = esAdmin ? fromPath : '/dashboard';
+        } else {
+          destino = fromPath;
+        }
+      }
+
       navigate(destino, { replace: true });
     } else {
       setError(result.error);

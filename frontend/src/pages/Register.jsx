@@ -52,7 +52,9 @@ const Register = () => {
     const result = await register(payload);
 
     if (result.success) {
-      navigate('/', { replace: true });
+      // Redirección estricta por rol (HU02): ROLE_USER redirigido a /dashboard
+      const destino = result.user?.rol === 'ROLE_ADMIN' ? '/admin' : '/dashboard';
+      navigate(destino, { replace: true });
     } else {
       setError(result.error);
       setIsSubmitting(false);
